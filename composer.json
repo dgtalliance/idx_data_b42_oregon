@@ -1,0 +1,16 @@
+{
+  "require": {
+    "elasticsearch/elasticsearch": "^8.6",
+    "guzzlehttp/guzzle": "^7.3",
+    "aws/aws-sdk-php": "^3.183",
+    "ext-simplexml": "*",
+    "ext-pdo": "*",
+    "gumlet/php-image-resize": "2.0.*",
+    "php-amqplib/php-amqplib": "^2.6"
+  },
+  "config": {
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
+  }
+}
