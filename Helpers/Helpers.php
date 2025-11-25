@@ -160,7 +160,6 @@ class Helpers {
         $value['address'] = addslashes($value['address']);
         $sql = "Update $table set Latitude={$value['Latitude']},Longitude={$value['Longitude']} where UnparsedAddress like '%{$value['address']}'";
         $con->prepare($sql)->execute();
-        var_dump($sql);
         $offset += 1000;
         IdxLogger::setLog("Updated Proeprty with address {$value['address']}");
       }
@@ -258,38 +257,33 @@ class Helpers {
     return $result;
   }
 
-  function getAllActivePendingProperties($status, $lastUpdate = NULL) {
+  function getAllActivePendingProperties($status, $skip, $lastUpdate = NULL) {
     $token = $this->globalVariables->TOCKEN;
-    $select = $this->globalVariables->selectdla;
+    $select = $this->globalVariables->select;
 
     // Construcción del filtro
     if ($status === "Closed") {
-      $filter = "MlsStatus in ('Sold','Leased') and CloseDate ge 2019-07-01";
+      $filter = "(StandardStatus+eq+Odata.Models.StandardStatus%27Closed%27)+and+CloseDate+gt+2019-07-01";
     }
     else {
       $filter = "(StandardStatus+eq+Odata.Models.StandardStatus%27Active%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27Pending%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27ActiveUnderContract%27)";
     }
 
-
     // Agregar condición de fecha si existe
     if ($lastUpdate !== NULL) {
-      $filter .= "%20and%20ModificationTimestamp%20ge%20$lastUpdate";
+      $filter .= "+and+ModificationTimestamp+ge+$lastUpdate";
     }
 
-    // Armado del URL
-    $url = 'https://resoapi.rmlsweb.com/reso/odata/Property?$filter=' . $filter . '&$top=100&$orderby=ModificationTimestamp&$select=' . $select;
-
+    $url = 'https://resoapi.rmlsweb.com/reso/odata/Property?$expand=Media($select=MediaURL,Order)&$select=' . $select . '&$skip=' . $skip . '&$filter=' . $filter . '&$top=100';
     $response = $this->clientGuzzle->request('GET', $url, [
       'headers' => [
         'Authorization' => $token,
         'Accept' => 'application/json',
       ],
     ]);
-
     if ($response->getStatusCode() === 200) {
       return json_decode($response->getBody()->getContents(), TRUE);
     }
-
     return FALSE;
   }
 
@@ -508,6 +502,13 @@ class Helpers {
   ) {
     foreach ($propertiesArrayComing['value'] as $k => $value) {
       $arrayValues = [];
+      $media = $value['Media'];
+      usort($media, function($a, $b) {
+        return $a['Order'] <=> $b['Order'];
+      });
+
+      $value['Media'] = array_column($media, 'MediaURL');
+      unset($value['@odata.id']);
       foreach ($value as $key => $item) {
         if (is_array($item)) {
           $value[$key] = implode(',', $item);
@@ -641,7 +642,6 @@ class Helpers {
     }
 
     $sqlString = "SELECT * FROM  $table $lastUpdateQuery ";
-    var_dump($sqlString);
     $data = $this->connection->WorkaConnection()->query($sqlString)->fetchAll();
 
     return $data;
@@ -679,50 +679,95 @@ class Helpers {
       'type_property' => $property['PropertySubType'],
       'status_name' => $property['StandardStatus'],
       'style' => $property['ArchitecturalStyle'],
-      'heating' => ($property['HeatType']),
-      'waterfront_frontage' => $property['Waterfront'],
-      'lot_size' => (int) $property['LotType'],
+      'heating' => ($property['Heating']),
+      'waterfront_frontage' => $property['WaterfrontFeatures'],
+      'lot_size' => (int) $property['LotSizeAcres'],
       'zoning' => $property['Zoning'],
-      'county' => $property['CityRegion'],
+      'county' => $property['CountyOrParish'],
       'parking_features' => ($property['ParkingFeatures']),
       'parking_total' => ($property['ParkingTotal']),
-      'parking_spaces' => ($property['ParkingSpaces']),
+      'parking_spaces' => ($property['ParkingTotal']),
       'sewer' => $property['Sewer'],
       'city' => $property['City'],
-      'garage' => $property['GarageParkingSpaces'],
+      'garage' => $property['GarageSpaces'],
       'exterior_features' => ($property['ExteriorFeatures']),
-      'water_source' => $property['Water'],
-      'heat' => $property['HeatType'],
+      'water_source' => $property['WaterSource'],
+      'heat' => $property['HeatingYn'],
       'addres' => $property['UnparsedAddress'],
       'basement' => $property['Basement'],
-      'pool_features' => $property['PoolFeatures'],
+      'pool_features' => NULL,
       'garage_type' => $property['GarageType'],
       'cooling' => $property['Cooling'],
       'security_features' => $property['SecurityFeatures'],
-      'balcony' => $property['BalconyType'],
-      'pets' => $property['PetsAllowed'],
+      'balcony' => NULL,
+      'pets' => $property['CondominiumPetPoliciesYNUR'],
       'postal_code' => $property['PostalCode'],
       'fireplace_features' => $property['FireplaceFeatures'],
-      'features' => $property['PropertyFeatures'],
+      'features' => $property['LotFeatures'],
       'bath_total' => $property['BathroomsTotalInteger'],
-      'living_area_range' => $property['LivingAreaRange'],
-      'state' => $property['StateOrProvince'] ?? 'ON',
+      'living_area_range' => $property['LotSizeRange'],
+      'state' => $property['StateOrProvince'],
     ];
   }
 
   public
   function getClassId($property
   ) {
+    $unit = $property['UnitNumber'];
     $subtype = $property['PropertySubType'];
-    $bussines = $property['BusinessType'];
+    $type = $property['PropertyType'];
 
-    if (isset($this->globalVariables->class_id[$subtype])) {
-      $class = $this->globalVariables->class_id[$subtype];
-    }
-    else {
-      $class = (empty($property['UnitNumber'])) ? 2 : 1;
-    }
+    $map = [];
 
+    $map["CommercialSale"]["Commercial"] = 19;
+    $map["CommercialSale"]["Income"] = 27;
+    $map["CommercialSale"]["Other"] = 19;
+    $map["CommercialSale"]["Industrial"] = 10;
+    $map["CommercialSale"]["BusinessOpportunity"] = 29;
+    $map["CommercialSale"]["HotelMotel"] = 20;
+    $map["CommercialSale"]["LiveWorkUnit"] = 15;
+    $map["CommercialSale"]["LightIndustrial"] = 10;
+    $map["CommercialSale"]["Church"] = 19;
+    $map["CommercialSale"]["MobilePark"] = 5;
+    $map["CommercialSale"]["Warehouse"] = 13;
+    $map["CommercialSale"]["Office"] = 22;
+    $map["CommercialSale"]["Recreational"] = 19;
+
+    $map["Land"]["SingleFamilyResidence"] = 14;
+    $map["Land"]["Farm"] = 34;
+    $map["Land"]["Industrial"] = 10;
+    $map["Land"]["ResidentialRecreational"] = 26;
+    $map["Land"]["MixedUse"] = 16;
+    $map["Land"]["MultiFamily"] = 33;
+    $map["Land"]["RecreationOnly"] = 16;
+    $map["Land"]["Forest"] = 16;
+
+    $map["Residential"]["ManufacturedHomeonRealProperty"] = 11;
+    $map["Residential"]["SingleFamilyResidence"] = 2;
+    $map["Residential"]["ManufacturedHomeinPark"] = 11;
+    $map["Residential"]["Attached"] = empty($unit) ? 2 : 1;;
+    $map["Residential"]["Condominium"] = 1;
+    $map["Residential"]["FloatingHome"] = 35;
+    $map["Residential"]["PlannedCommunity"] = 29;
+
+    if (empty($subtype)) {
+      if ($type == 'Residential') {
+        return empty($unit) ? 2 : 1;
+      }
+      elseif ($type == 'Land') {
+        return 26;
+      }
+      elseif ($type == 'CommercialSale') {
+        return 19;
+      }
+      elseif ($type == 'MultiFamily') {
+        return 33;
+      }
+      else {
+        return empty($unit) ? 2 : 1;
+      }
+    }
+    $class = $map[$type][$subtype];
     return $class;
   }
 
@@ -764,7 +809,6 @@ class Helpers {
         return $item['id'];
       }
     }
-    var_dump("entro");
     #Busqueda fallida
     return 0;
   }
@@ -866,9 +910,9 @@ class Helpers {
     }
     while (count($propertiesFromWorka) == 1000);
 
-    if ($this->status == 'active') {
-      $this->cleanIndex();
-    }
+    //    if ($this->status == 'active') {
+    //      $this->cleanIndex();
+    //    }
   }
 
   public
@@ -994,7 +1038,6 @@ class Helpers {
       if ($this->year <= $date and $this->year != NULL) {
         $index = $this->index . '_' . $this->year;
         $this->create_index($index);
-
         $data = [
           'index' => $index,
           'id' => $params['mls_num'],
@@ -2193,8 +2236,8 @@ class Helpers {
     $slug = filter_var($city, FILTER_SANITIZE_STRING);
     $code = strtolower(preg_replace('/[^a-z0-9-]+/i', '-', $slug));
     $city = ['name' => $city, 'code' => $code];
-    $officecode = (isset($property['MainOfficeKey'])) ? $property['MainOfficeKey'] : '';
-    $officename = (isset($property['ListOfficeName'])) ? $property['ListOfficeName'] : '';
+    $officecode = (isset($property['ListOfficeMlsId'])) ? $property['ListOfficeMlsId'] : NULL;
+    $officename = (isset($property['ListOfficeName'])) ? $property['ListOfficeName'] : NULL;
     $officePhone = (isset($property['ListOfficePhone'])) ? $property['ListOfficePhone'] : 0;
     $office = [
       'name' => $officename,
@@ -2202,8 +2245,8 @@ class Helpers {
       'phone' => $officePhone,
     ];
 
-    $coofficecode = (isset($property['CoListOfficeKey'])) ? $property['CoListOfficeKey'] : '';
-    $coofficename = (isset($property['CoListOfficeName'])) ? $property['CoListOfficeName'] : '';
+    $coofficecode = (isset($property['CoListOfficeMlsId'])) ? $property['CoListOfficeMlsId'] : NULL;
+    $coofficename = (isset($property['CoListOfficeName'])) ? $property['CoListOfficeName'] : NULL;
     $coofficePhone = (isset($property['CoListOfficePhone'])) ? $property['CoListOfficePhone'] : 0;
     $cooffice = [
       'name' => $coofficename,
@@ -2211,10 +2254,10 @@ class Helpers {
       'phone' => $coofficePhone,
     ];
 
-    $agentcode = (isset($property['ListAgentKey'])) ? $property['ListAgentKey'] : '';
-    $agentname = (isset($property['ListAgentFullName'])) ? explode(',', $property['ListAgentFullName'])[0] : '';
-    $agentphone = (isset($property['ListAgentDirectPhone'])) ? $property['ListAgentDirectPhone'] : '';
-    $agentemail = (isset($property['ListAgentEmail'])) ? $property['ListAgentEmail'] : '';
+    $agentcode = (isset($property['ListAgentMlsId'])) ? $property['ListAgentMlsId'] : NULL;
+    $agentname = (isset($property['ListAgentFullName'])) ? $property['ListAgentFullName'] : NULL;
+    $agentphone = (isset($property['ListAgentPreferredPhone'])) ? $property['ListAgentPreferredPhone'] : NULL;
+    $agentemail = (isset($property['ListAgentEmail'])) ? $property['ListAgentEmail'] : NULL;
     $agent = [
       'name' => $agentname,
       'code' => $agentcode,
@@ -2222,9 +2265,27 @@ class Helpers {
       'email' => $agentemail,
     ];
 
-    $coagentcode = (isset($property['CoListAgentKey'])) ? $property['CoListAgentKey'] : '';
+    $buyeragentcode = (isset($property['BuyerAgentMlsId'])) ? $property['BuyerAgentMlsId'] : NULL;
+    $buyeragentname = (isset($property['BuyerAgentFullName'])) ? $property['BuyerAgentFullName'] : NULL;
+    $buyeragent = [
+      'name' => $buyeragentname,
+      'code' => $buyeragentcode,
+      'phone' => NULL,
+      'email' => NULL,
+    ];
+
+    $buyerOfficeCode = (isset($property['BuyerOfficeMlsId'])) ? $property['BuyerOfficeMlsId'] : NULL;
+    $buyeraOfficename = (isset($property['BuyerOfficeName'])) ? $property['BuyerOfficeName'] : NULL;
+    $buyeraOfficePhone = (isset($property['BuyerOfficePhone'])) ? $property['BuyerOfficePhone'] : NULL;
+    $buyeroffice = [
+      'name' => $buyeraOfficename,
+      'code' => $buyerOfficeCode,
+      'phone' => $buyeraOfficePhone,
+    ];
+
+    $coagentcode = (isset($property['CoListAgentMlsId'])) ? $property['CoListAgentMlsId'] : '';
     $coagentname = (isset($property['CoListAgentFullName'])) ? explode(',', $property['CoListAgentFullName'])[0] : '';
-    $coagentphone = (isset($property['CoListAgentDirectPhone'])) ? $property['CoListAgentDirectPhone'] : '';
+    $coagentphone = (isset($property['CoListAgentPreferredPhone'])) ? $property['CoListAgentPreferredPhone'] : '';
     $coagentemail = (isset($property['CoListAgentEmail'])) ? $property['CoListAgentEmail'] : '';
     $coagent = [
       'name' => $coagentname,
@@ -2233,7 +2294,7 @@ class Helpers {
       'email' => $coagentemail,
     ];
 
-    $county = trim(rtrim($property['CityRegion']));
+    $county = trim(rtrim($property['CountyOrParish']));
     $county = trim(rtrim($county));
     $slug = filter_var($county, FILTER_SANITIZE_STRING);
     $code = strtolower(preg_replace('/[^a-z0-9-]+/i', '-', $slug));
@@ -2249,7 +2310,7 @@ class Helpers {
       $address_large = (trim(preg_replace('!\s+!', ' ', implode(', ', [
         trim($property['City']),
         implode(' ', [
-          $this->globalVariables->states[$property['StateOrProvince']] ?? 'ON',
+          $property['StateOrProvince'] ?? 'OR',
           trim($property['PostalCode']),
         ]),
       ]))));
@@ -2258,62 +2319,30 @@ class Helpers {
     $fullAddress = $address_short . ', ' . $address_large;
     $fullAddress = trim($fullAddress);
     $price_origin = (isset($property['OriginalListPrice'])) ? (int) $property['OriginalListPrice'] : $property['ListPrice'];
+    $price = $property['ListPrice'];
+    $sqft = $property['BuildingAreaTotal'] ?? $property['BuildingAreaCalculated'];
+    $price_sqft = !empty($sqft) && $sqft > 0 ? $price / $sqft : 0;
 
-    if ($property['ListPriceUnit'] == 'Sq M Net') {
-      $price = $property['ListPrice'] * $property['BuildingAreaTotal'];
-      $sqft = $property['BuildingAreaTotal'] * 10.7639;
-      $price_sqft = !empty($sqft) ? $price / $sqft : 0;
-    }
-    elseif ($property['ListPriceUnit'] == 'Per Acre') {
-      $price = $property['ListPrice'] * $property['BuildingAreaTotal'];
-      $sqft = $property['BuildingAreaTotal'] * 43560;
-      $price_sqft = !empty($sqft) ? $property['ListPrice'] / $sqft : 0;
-    }
-    elseif (preg_match('/Sq Ft/i', $property['ListPriceUnit']) == 1) {
-      $price = $property['ListPrice'] * $property['BuildingAreaTotal'];
-      $price_sqft = $property['ListPrice'] ?? 0;
-      $sqft = $property['BuildingAreaTotal'];
-    }
-    else {
-      $price = $property['ListPrice'];
-      $price_sqft = (int) $property['BuildingAreaTotal'] != 0 ? $property['ListPrice'] / $property['BuildingAreaTotal'] : 0;
-      $sqft = $property['BuildingAreaTotal'];
-    }
-
-    if (empty($sqft)) {
-      $price = $property['ListPrice'];
-      $sqftExploded = explode('-', $property['LivingAreaRange']);
-      if (count($sqftExploded) == 2) {
-        $sqft = $sqftExploded[1];
-      }
-      else {
-        $sqft = (int) trim(str_replace(['+', '<', '>'], [
-          '',
-          '',
-          '',
-        ], $property['LivingAreaRange']));
-      }
-      $price_sqft = !empty($sqft) ? $price / $sqft : 0;
-    }
-
-    $lotSize = (!empty($property['LotWidth']) && !empty($property['LotDepth'])) ? $property['LotWidth'] * $property['LotDepth'] : 0;
+    $lotSize = !empty($property['LotSizeAcres']) ? $property['LotSizeAcres'] * 43560 : 0;
     $params['sysid'] = $property['ListingKey'];
-    $params['mls_num'] = $property['ListingKey']; //$property['ListingId'];
-    $params['date_property'] = date('Y-m-d H:i:s', strtotime($property['OriginalEntryTimestamp']));
+    $params['mls_num'] = $property['ListingId'];
+    $params['date_property'] = date('Y-m-d H:i:s', strtotime($property['OnMarketDate']));
 
-    $params['list_date'] = (!empty($property['OriginalEntryTimestamp'])) ? strtotime($property['OriginalEntryTimestamp']) : strtotime($property['ModificationTimestamp']);
+    $params['list_date'] = (!empty($property['OnMarketDate'])) ? strtotime($property['OnMarketDate']) : strtotime($property['ModificationTimestamp']);
 
     $params['class_id'] = $class_id;
     $params['city'] = $city;
     $params['county'] = $country;
-    $params['board_id'] = 36;
+    $params['board_id'] = 42;
     $params['city_name'] = $city_name;
 
     $params['office_id'] = $office;
     $params['co_office_id'] = $cooffice;
+    $params['office_seller_id'] = $buyeroffice;
 
     $params['agent_id'] = $agent;
     $params['co_agent_id'] = $coagent;
+    $params['agent_seller_id'] = $buyeragent;
 
     $params['address_short'] = str_replace("'", "\'", $address_short);
     $params['address_large'] = str_replace("'", "\'", $address_large);
@@ -2321,13 +2350,12 @@ class Helpers {
 
     $params['price_origin'] = (int) $price_origin;
     $params['price'] = (int) $price;   //revisar en detalle si el close price es el current de los rental
-    $params['is_rental'] = ($property['TransactionType'] == 'For Sale' || empty($property['TransactionType'])) ? 0 : 1;
-    $params['year_built'] = (!empty($property['ApproximateAge'])) ? (int) $property['ApproximateAge'] : NULL;
+    $params['is_rental'] = 0;
+    $params['year_built'] = (!empty($property['YearBuilt'])) ? (int) $property['YearBuilt'] : NULL;
     $params['type_name'] = $property['PropertySubType'];
     $params['type'] = $property['PropertyType'];
     $params['bed'] = (isset($property['BedroomsTotal'])) ? (($property['BedroomsTotal'] == NULL) ? 0 : (int) $property['BedroomsTotal']) : 0;
-    $params['neighborhood'] = $property['CityRegion'];
-    $params['baths_half'] = NULL;
+    $params['baths_half'] = $property['BathroomsHalf'] ?? 0;
 
     //    foreach ($this->globalVariables->baths as $key => $value) {
     //      if (!empty($property[$key])) {
@@ -2338,7 +2366,7 @@ class Helpers {
     //    }
     $params['bath'] = $property['BathroomsTotalInteger'];
 
-    $params['img_cnt'] = 0;
+    $params['img_cnt'] = $property['PhotosCount'];
 
     $params['st_number'] = (isset($property['StreetNumber'])) ? $property['StreetNumber'] : NULL;
     $params['st_name'] = str_replace("'", "\'", $st_name);                                            //aumentar tamaño del campo de texto
@@ -2349,58 +2377,57 @@ class Helpers {
       $params['image'] = $params['mls_num'] . "_1.jpeg";
     }
     $params['zip'] = $property['PostalCode'] ?? 0;
-
+    //TODO
     $params['building_sqft'] = (int) $sqft ?? 0;;  //revisar en detalle
     $params['sqft'] = (int) $sqft ?? 0;
     $params['lot_size'] = $lotSize ?? 0;
 
     $params['lot_desc'] = (isset($property['LotFeatures'])) ? $property['LotFeatures'] : NULL;                  //aumentar tamaño de campo
-    $params['legal_desc'] = (isset($property['LegalDescription'])) ? trim(preg_replace('!\s+!', ' ', $property['LegalDescription'])) : NULL;
-    $params['amenities'] = $property['PropertyFeatures'] ?? NULL;
-    if ($params['class_id'] == 1) {
-      $params['amenities'] = $property['AssociationFeeIncludes'] ?? NULL;
-    }
+    $params['legal_desc'] = (isset($property['TaxLegalDescription'])) ? trim(preg_replace('!\s+!', ' ', $property['TaxLegalDescription'])) : NULL;
+    $params['amenities'] = $property['AssociationAmenities'] ?? NULL;
 
     $params['parking_desc'] = (isset($property['ParkingFeatures'])) ? addslashes($property['ParkingFeatures']) : NULL;
 
-    $params['wv'] = $property['View'] ?? NULL;
-    $params['water_front'] = !empty($property['WaterfrontYN']) ? TRUE : FALSE;
+    $params['wv'] = $property['ViewDescription'] ?? NULL;
+    $params['water_front'] = !empty($property['WaterfrontFeatures']) ? TRUE : FALSE;
 
-    $params['wa'] = (isset($property['Water'])) ? $property['Water'] : 'Public';
+    $params['wa'] = (isset($property['WaterSource'])) ? $property['WaterSource'] : 'Public';
 
-    $params['state'] = $property['StateOrProvince'] ?? 'ON';
-    $params['state_name'] = $this->globalVariables->statesName[$property['StateOrProvince']] ?? 'ON';
+    $params['state'] = $property['StateOrProvince'] ?? 'OR';
+    //TODO
+    $params['state_name'] = $this->globalVariables->statesName[$property['StateOrProvince']] ?? 'OR';
 
-    $params['parking'] = !empty($property['ParkingTotal']) ? $property['ParkingTotal'] : $property['ParkingSpaces'];
+    $params['parking'] = !empty($property['ParkingTotal']) ? $property['ParkingTotal'] : $property['GarageSpaces'];
 
-    $params['area'] = $property['RetailAreaCode'];
+    $params['area'] = str_replace('_', '', $property['MLSAreaMajor']);
 
-    $params['condo_floor'] = (isset($property['Level'])) ? (int) $property['Level'] : 0;
+    $params['condo_floor'] = (isset($property['FloorNumber'])) ? (int) $property['FloorNumber'] : 0;
     $params['ocean_front'] = (isset($params['wv'])) ? ((preg_match('/Beach/i', $params['wv']) || preg_match('/Ocean/i', $params['wv'])) ? TRUE : FALSE) : FALSE;
     $params['water_view'] = (!empty($property['WaterView'])) ? TRUE : FALSE;
+
     $params['tw'] = preg_match('/Townhouse/i', $property['PropertySubType']) == 1 ? TRUE : FALSE;
-    $params['floor'] = (isset($property['Basement1'])) ? $property['Basement1'] : '';
-    $params['is_vacant'] = (preg_match('/Land/i', $property['PropertySubType']) == 1) ? TRUE : FALSE;;
-    $params['furnished'] = ($property['Furnished'] == 'Furnished' || $property['Furnished'] == 'Partially') ? TRUE : FALSE;
+    $params['floor'] = (isset($property['Basement'])) ? $property['Basement'] : '';
+    $params['is_vacant'] = $params['class_id'] == 26 ? TRUE : FALSE;;
+    $params['furnished'] = (isset($property['PublicRemarks'])) ? (preg_match('/furnished/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
     $params['foreclosure'] = (isset($property['PublicRemarks'])) ? (preg_match('/foreclosure/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
     $params['penthouse'] = (isset($property['PublicRemarks'])) ? (preg_match('/penthouse/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
-    $params['pets'] = (preg_match('/Restricted/i', $property['PetsAllowed']) || $property['PetsAllowed'] == 1) ? TRUE : FALSE;
-    $params['pool'] = !empty($property['PoolFeatures']) ? (preg_match('/None/i', $property['PoolFeatures']) == 1 ? FALSE : TRUE) : FALSE;
+    $params['pets'] = (preg_match('/Pets/i', $property['PublicRemarks'])) ? TRUE : FALSE;
+    $params['pool'] = (preg_match('/pool/i', $property['PublicRemarks'])) == 1 ? FALSE : TRUE;
 
     $params['golf'] = (isset($property['PublicRemarks'])) ? (preg_match('/Golf/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
     $params['tennis'] = (isset($property['PublicRemarks'])) ? (preg_match('/Tennis/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
-    $params['short_sale'] = (isset($property['PublicRemarks'])) ? (preg_match('/Short sale/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
-    $params['is_occupied'] = (isset($property['PublicRemarks'])) ? (preg_match('/Occupied/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
+    $params['short_sale'] = $property['ShortSaleYn'] == 1 ? TRUE : FALSE;
+    $params['is_occupied'] = !empty($property['OccupancyTypes']) ? TRUE : FALSE;
     $params['guest_house'] = (isset($property['PublicRemarks'])) ? (preg_match('/Guest House/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
     $params['gated_community'] = (isset($property['PublicRemarks'])) ? (preg_match('/Gaated Community/i', $property['PublicRemarks']) ? FALSE : TRUE) : FALSE;
     $params['equestrian'] = (isset($property['PublicRemarks'])) ? (preg_match('/Equestrian/i', $property['PublicRemarks']) ? TRUE : FALSE) : FALSE;
-    $params['subdivision'] = $property['CityRegion'] ?? NULL;
-    $params['boat_dock'] = (isset($property['equestrian'])) ? (preg_match('/Boat Dock/i', $property['equestrian']) ? TRUE : FALSE) : FALSE;
-    $params['condo_hotel'] = (isset($property['equestrian'])) ? (preg_match('/Motel/i', $property['equestrian']) || preg_match('/Hotel/i', $property['equestrian']) ? TRUE : FALSE) : FALSE;
+    $params['subdivision'] = $property['SubdivisionName'] ?? NULL;
+    $params['boat_dock'] = (preg_match('/dock/i', $property['PropertySubType'])) ? TRUE : FALSE;
+    $params['condo_hotel'] = preg_match('/HotelMotel/i', $property['PropertySubType']) ? TRUE : FALSE;
 
     $params['mf'] = ($params['class_id'] == 33) ? TRUE : FALSE;
 
-    $params['oh'] = 0;
+    $params['oh'] = $property['OpenHouseYn'] ?? 0;
 
     $params['folio_number'] = (isset($property['ParcelNumber'])) ? $property['ParcelNumber'] : '';
     $params['style'] = (isset($property['ArchitecturalStyle'])) ? $property['ArchitecturalStyle'] : '';
@@ -2418,7 +2445,7 @@ class Helpers {
     ])))));
 
     $now = time(); // or your date as well
-    $your_date = strtotime($property['OriginalEntryTimestamp']);
+    $your_date = strtotime($property['OnMarketDate']);
     $datediff = $now - $your_date;
 
     $params['adom'] = round($datediff / (60 * 60 * 24));;
@@ -2426,8 +2453,8 @@ class Helpers {
     $params['tax_year'] = (isset($property['TaxYear'])) ? (int) $property['TaxYear'] : NULL;
     $params['tax_amount'] = (isset($property['TaxAnnualAmount'])) ? (int) $property['TaxAnnualAmount'] : NULL;
     $params['feature_exterior'] = (isset($property['ExteriorFeatures'])) ? $property['ExteriorFeatures'] : '';
-    $params['virtual_tour'] = (isset($property['VirtualTourURL'])) ? $property['VirtualTourURL'] : NULL;
-    $params['is_commercial'] = $property['PropertyType'] == 'Commercial' ? TRUE : FALSE;
+    $params['virtual_tour'] = (isset($property['VirtualTourURLUnbranded'])) ? $property['VirtualTourURLUnbranded'] : NULL;
+    $params['is_commercial'] = $property['PropertyType'] == 'CommercialSale' ? TRUE : FALSE;
     $params['more_info'] = $more_info;
     $previusListPrice = $property['PreviousListPrice'] ?? $price_origin;
     $params['reduced_price'] = ($previusListPrice > 0) ? ($price * 100) / $previusListPrice : 0;
@@ -2438,7 +2465,7 @@ class Helpers {
     $params['assoc_fee'] = (isset($property['AssociationFee'])) ? (int) $property['AssociationFee'] : 0;
     $params['price_sqft'] = $price_sqft;
 
-    $params['pt_view'] = $property['View'] ?? NULL;
+    $params['pt_view'] = $property['ViewDescription'] ?? NULL;
 
     $params['imagens'] = [];
     $params['development'] = $property['Development'] ?? NULL; //revisar OJO
@@ -2468,7 +2495,7 @@ class Helpers {
     $params['thumbnail_url'] = 'https://' . $this->globalVariables->bucket_name_reduced . '.idxboost.us/' . $prefix . '/' . $params['mls_num'] . '_x600.jpeg';;
 
     if ($this->table == "idx_property_active_pending") {
-      $params['check_price_change_timestamp'] = $property['PriceChangeTimestamp'] ? date('Y-m-d H:i:s', strtotime($property['PriceChangeTimestamp'])) : date('Y-m-d H:i:s', strtotime($property['OriginalEntryTimestamp']));
+      $params['check_price_change_timestamp'] = isset($property['PriceChangeTimestamp']) ? date('Y-m-d H:i:s', strtotime($property['PriceChangeTimestamp'])) : date('Y-m-d H:i:s', strtotime($property['OnMarketDate']));
 
       $this->type = ($params['is_rental'] == 1) ? 'rental' : 'sale';
     }
@@ -2556,7 +2583,7 @@ class Helpers {
 
     $streetName = [];
 
-    $stSufix = (empty($property['StreetSuffix']) || $property['StreetSuffix'] == 'N\A') ? $property['StreetSuffixCode'] : $property['StreetSuffix'];
+    $stSufix = (empty($property['StreetSuffix']) || $property['StreetSuffix'] == 'N\A') ? '' : $property['StreetSuffix'];
     $suffix = isset($suffixArray[strtoupper($stSufix)]) ? ucwords(strtolower($this->globalVariables->suffixArray[strtoupper($stSufix)])) : $stSufix;
 
     $prefix = trim($property['StreetDirPrefix']);
@@ -2685,9 +2712,8 @@ class Helpers {
     $collection = [];
     $prefix = substr($mlsNumber, -2);
     for ($i = 1; $i <= $imgCount; $i++) {
-      $collection[] = 'https://ib-36-photos.idxboost.us/' . $prefix . '/' . (string) $mlsNumber . '_' . $i . '.' . 'jpeg';
+      $collection[] = 'https://ib-42-photos.idxboost.us/' . $prefix . '/' . (string) $mlsNumber . '_' . $i . '.' . 'jpeg';
     }
-    var_dump($collection);
     return $collection;
   }
 
@@ -2981,9 +3007,7 @@ class Helpers {
           //                        $sql = "Select request from api_board_21 where date='$day'";
           //                        $test = $this->connection->connectionForCoordinatesControl()->query($sql)->fetchAll();
 
-          var_dump($address);
           $coord = $this->getCoordinatesByAddress($address);
-          var_dump($coord);
           $lat = isset($coord['lat']) ? $coord['lat'] : NULL;
           $lng = isset($coord['lon']) ? $coord['lon'] : NULL;
           if (!empty($lat) && !empty($lng)) {
@@ -3178,7 +3202,7 @@ class Helpers {
     $con = $this->connection->WorkaConnection();
     $table = ($status == 'Active') ? 'Active_Property' : 'Closed_Property';
 
-    $sql = "Select ListingKey as ListingId,ListingKey as ListingKey from $table where (MediaStatus not in (1,2) or MediaStatus is null) order by ModificationTimestamp desc limit 1000";
+    $sql = "Select ListingId,ListingKey from $table where (MediaStatus not in (1,2) or MediaStatus is null) and PhotosCount>0 order by ModificationTimestamp desc ";
     return $con->query($sql)->fetchAll();
   }
 
@@ -3196,29 +3220,9 @@ class Helpers {
   public
   function getImageByProvider($con, $sysid, $status
   ) {
-    $token = $this->globalVariables->VOW_TOCKEN;
-
-    $url = 'https://query.ampre.ca/odata/Media?$filter=ResourceRecordKey eq \'' . $sysid . '\' and ImageSizeDescription eq \'Largest\' and MediaStatus eq \'Active\'&$select=MediaURL,Order&$orderby=Order';
-
-    $response = $this->clientGuzzle->request('GET', $url, [
-      'headers' => [
-        'Authorization' => $token,
-        'Accept' => 'application/json',
-      ],
-    ]);
-    $result = json_decode($response->getBody()->getContents(), TRUE);
-    if (count($result) > 0) {
-      $result = array_column($result['value'], 'MediaURL');
-      $imgCnt = count($result);
-    }
-    else {
-      $imgCnt = 0;
-      $result = [];
-    }
     $table = ($status == 'Active') ? 'Active_Property' : 'Closed_Property';
-    $sql = "Update $table set PhotosCount=$imgCnt where ListingKey='{$sysid}'";
-    $con->prepare($sql)->execute();
-    return $result;
+    $sql = "Select Media from $table where ListingKey = '$sysid' ";
+    return explode(',', $con->query($sql)->fetch()['Media']);
   }
 
   public

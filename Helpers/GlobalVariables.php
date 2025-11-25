@@ -2,26 +2,25 @@
 
 class GlobalVariables {
 
-  const BOARD_ID = 36;
+  const BOARD_ID = 42;
 
-  public $do_spaces_access_key = 'DO00FGRAEPGR9YFG86T9';
+  public $do_spaces_access_key = 'DO801NRY7XC4LGZ6FCY3';
 
-  public $do_spaces_secret_key = 'Lv24FQog+Nr4sbvH/rOdS8IVVnNyEhVv5Ste/4hMjvI';
+  public $do_spaces_secret_key = 'Ugaf8yEeRctKTDq71eXMRRaIS+eWFwpV6/4Hb149ThM';
 
-  public $bucket_name = 'ib-36-photos';
+  public $bucket_name = 'ib-42-photos';
 
-  public $do_spaces_access_key_reduced = 'DO00FGRAEPGR9YFG86T9';
+  public $do_spaces_access_key_reduced = 'DO801HVYNWAAZ2UDV2KP';
 
-  public $do_spaces_secret_key_reduced = 'Lv24FQog+Nr4sbvH/rOdS8IVVnNyEhVv5Ste/4hMjvI';
+  public $do_spaces_secret_key_reduced = 'Wc+yJUVCYzC3/haagvSQCUMzAlxkgdYX8IpNMLRx/A8';
 
-  public $bucket_name_reduced = 'ib-36-photos';
+  public $bucket_name_reduced = 'th-ib-42-photos';
 
 
   public $TOCKEN = 'Bearer 8b439b2251300ff9ac9065b67ada9850';
 
-  public $select = "ListingId,StandardStatus";
+  public $select = "Appliances,ArchitecturalStyle,AssociationAmenities,AssociationFee,AssociationFeeFrequency,AssociationYn,AttachedGarageYn,AuctionTerms,Availability,BankOwnedYn,Basement,BathroomsFull,BathroomsHalf,BathroomsPartial,BathroomsTotalInteger,BeachAccess,BuildingAreaCalculated,BedroomsTotal,BuildingAreaDescription,BusinessName,BuildingAreaTotal,BuyerAgentFullName,BuyerAgentMlsId,BuyerOfficeMlsId,BuyerOfficeName,BuyerOfficePhone,City,CloseDate,ClosePrice,CoListAgentEmail,CoListAgentFullName,CoListAgentMlsId,CoListAgentPreferredPhone,CoListOfficeMlsId,CoListOfficeName,CommercialFeatures,CommunityFeatures,CondominiumDeckArea,CondominiumElevatorYn,CondominiumFloorPlan,CondominiumGarageType,CondominiumParkingTax,CondominiumParkingSpaceNo,CondominiumPetPoliciesYNUR,CondominiumUnitLevel,CondominiumYardYn,ContractStatusChangeDate,Cooling,Country,CountyOrParish,CropLandLeaseYn,CumulativeDaysOnMarket,CurrentPriceForStatus,CurrentUse,DaysOnMarket,DirectionFaces,Directions,DocumentsAvailable,ElectricOnPropertyDesc,ElementarySchool,ExistingLeaseType,ExteriorDescription,ExteriorFeatures,FarmAddlDwellingDesc,FarmType,FireplaceFeatures,FireplacesTotal,FloatingHomeBoatDockDesc,FuelDescription,FloatingHomeBoatDockYn,GarageSpaces,GarageType,GeoLocation,GrossIncome,Heating,HeatingYn,HighSchool,HotSheetDate,InteriorFeatures,InternetAddressDisplayYn,Latitude,ListAgentEmail,ListAgentFullName,ListAgentMlsId,ListAgentPreferredPhone,ListMainOfficeKeyNumeric,ListOfficeFax,ListOfficeMlsId,ListOfficeName,ListOfficePhone,ListPrice,ListingContractDate,ListingId,ListingKey,ListingService,ListingTerms,Longitude,LotFeatures,LotSizeAcres,LotSizeDimensions,LotSizeRange,LotSizeSquareFeet,MLSAreaMajor,ManufacturedHomeAllowedYn,MiddleOrJuniorSchool,MlsStatus,ModificationTimestamp,NeighborhoodFeatures,NewConstructionYn,NumberOfBuildings,NumberOfLots,NumberOfStallsFarm,NumberOfUnitsTotal,OccupancyTypes,OffMarketDate,OfferInstructions,OnMarketDate,OpenHouseYn,OriginalListPrice,OriginatingSystemKey,OriginatingSystemName,OtherEquipment,ParcelNumber,ParkingFeatures,ParkingTotal,PercentOwnership,Photo1URL,PhotosChangeTimestamp,PhotosCount,PhotosExistYn,PostalCode,PreviousListPrice,PriceType,PropertyAttachedYn,PropertyCondition,PropertySubType,PropertyType,PublicRemarks,RangeArea,RentAmount,RentIncludes,Roof,SaleIncludes,SecurityFeatures,SeniorCommunityYn,Sewer,ShortSalePendingDate,ShortSaleYn,SoilCondition,SoldPricePerSquareFeet,SourceSystemKey,StandardStatus,StateOrProvince,StatusChangeTimestamp,Storage,StoriesTotal,StreetDirPrefix,StreetDirSuffix,StreetName,StreetNumber,StreetSuffix,SubdivisionName,SupplementNumber,TaxAnnualAmount,TaxLegalDescription,TaxYear,UnitNumber,UnparsedAddress,UpperLevelAreaTotal,Utilities,ViewDescription,ViewYn,VineyardArea,VirtualTourURLUnbranded,VirtualTourURLUnbrandedYn,WaterSource,WaterfrontFeatures,WaterfrontYn,WindowFeatures,YearBuilt,Zoning,ListAgentKey,ListOfficeKey,ListMainOfficeKey,ListAgentKeyNumeric,PropertyRecordUpdateTimestamp,ManufacturerName,LandLeaseYn,FloorNumber,OpportunityZoneYn";
 
-  public $selectdla = "AccessibilityFeatures,AccessToProperty,AddChangeTimestamp,AdditionalMonthlyFee,AlternativePower,ApartmentNumber,ApproximateAge,ArchitecturalStyle,AssessmentYear,AssignmentYN,AssociationAmenities,AssociationFee,AssociationFeeIncludes,AssociationYN,AttachedGarageYN,BalconyType,Basement,BasementYN,BathroomsTotalInteger,BedroomsTotal,BoardPropertyType,BrokerFaxNumber,BuildingAreaTotal,BuildingAreaUnits,BusinessName,BusinessType,BuyerOfficeName,BuyOptionYN,CableYNA,ChannelName,City,CityRegion,ClosePrice,CoBuyerOfficeName,CloseDate,CoListAgentAOR,CoListOfficeName,CommercialCondoFee,CommercialCondoFeeFrequency,CommunityFeatures,ConstructionMaterials,ContractStatus,Cooling,CoolingYN,Country,CountyOrParish,CoveredSpaces,CrossStreet,DDFYN,DirectionFaces,Directions,Disclosures,DockingType,ElevatorType,ElevatorYN,EnergyCertificate,ExpirationDate,ExteriorFeatures,FarmFeatures,FarmType,FinancialStatementAvailableYN,FireplaceFeatures,FireplacesTotal,FireplaceYN,FoundationDetails,FractionalOwnershipYN,FranchiseYN,Furnished,GarageParkingSpaces,GarageType,GarageYN,HeatingYN,HeatSource,HeatType,HoldoverDays,InteriorFeatures,InternetAddressDisplayYN,IslandYN,LaundryFeatures,LeasedEntryTimestamp,ListingContractDate,ListingKey,ListOfficeName,ListPrice,ListPriceUnit,LotDepth,LotDimensionsSource,LotFeatures,LotSizeUnits,LotType,MainOfficeKey,MajorChangeTimestamp,MediaChangeTimestamp,MLSAreaMunicipalityDistrict,MlsStatus,ModificationTimestamp,OccupantType,OriginalEntryTimestamp,OriginalListPrice,OriginatingSystemID,OriginatingSystemName,ParcelNumber,ParkingSpaces,PaymentFrequency,PercentRent,PictureYN,PhotosChangeTimestamp,PetsAllowed,PoolFeatures,PossessionDetails,PostalCode,PreviousListPrice,PriceChangeTimestamp,PropertyAttachedYN,PropertyFeatures,PropertySubType,PropertyType,PropertyUse,PublicRemarks,RetailArea,RetailAreaCode,Roof,RoomsTotal,SecurityFeatures,SeniorCommunityYN,Sewer,Shoreline,StandardStatus,StateOrProvince,StreetDirPrefix,StreetDirSuffix,StreetName,StreetNumber,StreetSuffix,StreetSuffixCode,TaxAnnualAmount,TaxType,TaxYear,TransactionType,UnitNumber,UnparsedAddress,Utilities,View,Water,Waterfront,WaterfrontYN,WaterView,Zoning,ListOfficePhone,CoListOfficeKey,CoListOfficePhone,ListAgentKey,ListAgentFullName,ListAgentDirectPhone,CoListAgentKey,CoListAgentFullName,CoListAgentDirectPhone,ParkingFeatures,LivingAreaRange,ParkingTotal,ShowingRequirements,LotWidth,WashroomsType1,WashroomsType1Pcs,WashroomsType2,WashroomsType2Pcs,WashroomsType3,WashroomsType3Pcs,WashroomsType4,WashroomsType4Pcs,WashroomsType5,WashroomsType5Pcs";
 
   public $class = [
     'CommercialProperty',
@@ -59,59 +58,9 @@ class GlobalVariables {
     'Bay Front',
   ];
 
-  public $YOUR_API_KEY_36 = "AIzaSyDRRe2Tf1C5uAF02j2eMjEMmiXHyIoyHUw";//board36
-
-  public $YOUR_API_KEY_17 = "AIzaSyAQVJCX-Mw2_63mWURz4-d5_drwPP000Y0";//board17
-
-  public $YOUR_API_KEY_11 = "AIzaSyCq4vmJ4vnOAR6Cqbgbbzfugfd_O5kykYA";  //board11
-
-  public $YOUR_API_KEY_15 = "AIzaSyDnE8Xtdm7xRyQG9fFDIthlby1p47ugNDY";//board15
-
-  public $YOUR_API_KEY_5 = "AIzaSyA2CStt1NhJvB8k__Ho_wRMLhzsldC_sHo";//board15
-
-  public $YOUR_API_KEY_16 = "AIzaSyAwwLiJpeFc20LQpPmfiAKbIyJ97WIYpTU";//board16
   public $YOUR_API_KEY_21 = "AIzaSyB1BZAVsPFP-WdCF2UNhnpdNFb7rHED_qg";//board21
 
-  public $class_id = [
-    'Office' => 22,
-    'Detached' => 2,
-    'MobileTrailer' => 38,
-    'Semi-Detached' => '2',
-    'Att/Row/Townhouse' => '1',
-    'Vacant Land' => 28,
-    'Other' => 38,
-    'Condo Apartment' => 1,
-    'Condo Townhouse' => 1,
-    'Farm' => 34,
-    'Multiplex' => 33,
-    'Parking Space' => 38,
-    'Common Element Condo' => 1,
-    'Duplex' => 33,
-    'Co-op Apartment' => 1,
-    'Detached Condo' => 1,
-    'Commercial Retail' => 15,
-    'Land' => 26,
-    'Industrial' => 10,
-    'Rural Residential' => 2,
-    'Triplex' => 33,
-    'Fourplex' => 33,
-    'Link' => 38,
-    'Co-Ownership Apartment' => 1,
-    'Sale Of Business' => 29,
-    'Locker' => 38,
-    'Semi-Detached Condo' => 1,
-    'Investment' => 29,
-    'Vacant Land Condo' => 26,
-    'Leasehold Condo' => 1,
-    'Store W Apt/Office' => 22,
-    'Timeshare' => 38,
-    'Room' => 38,
-    'Upper Level' => 38,
-    'Lower Level' => 38,
-    'Modular Home' => 38,
-    'Shared Room' => 38,
-    'Phased Condo' => 38,
-  ];
+
 
   public $suffixArray = [
     'ALLEE' => 'ALY',
@@ -467,9 +416,9 @@ class GlobalVariables {
   public $dbCharset = 'utf8mb4';
 
   //    public $activeDb = 'idx_newjersey';
-  public $activeDb = 'idxboost_b36_db';
+  public $activeDb = 'idxboost_b42_db';
 
-  public $historyDb = 'idxboost_b36_history';
+  public $historyDb = 'idxboost_b42_history';
 
   public $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -484,9 +433,8 @@ class GlobalVariables {
   ];
 
   public $statesName = [
-    'AB' => 'Alberta',
-    'ON' => 'Ontario',
-    'NB' => 'New Brunswick',
+    'OR' => 'Oregon',
+    'WA' => 'Washington',
   ];
 
 }
