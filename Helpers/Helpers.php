@@ -676,34 +676,34 @@ class Helpers {
   function set_more_info($property
   ) {
     return [
-      'type_property' => $property['PropertySubType'],
-      'status_name' => $property['StandardStatus'],
-      'style' => $property['ArchitecturalStyle'],
-      'heating' => ($property['Heating']),
-      'waterfront_frontage' => $property['WaterfrontFeatures'],
+      'type_property' => $this->splitCamelCase($property['PropertySubType']),
+      'status_name' => $this->splitCamelCase($property['StandardStatus']),
+      'style' => $this->splitCamelCase($property['ArchitecturalStyle']),
+      'heating' => $this->splitCamelCase($property['Heating']),
+      'waterfront_frontage' => $this->splitCamelCase($property['WaterfrontFeatures']),
       'lot_size' => (int) $property['LotSizeAcres'],
       'zoning' => $property['Zoning'],
-      'county' => $property['CountyOrParish'],
+      'county' => $this->splitCamelCase($property['CountyOrParish']),
       'parking_features' => ($property['ParkingFeatures']),
       'parking_total' => ($property['ParkingTotal']),
       'parking_spaces' => ($property['ParkingTotal']),
       'sewer' => $property['Sewer'],
-      'city' => $property['City'],
+      'city' => $this->splitCamelCase($property['City']),
       'garage' => $property['GarageSpaces'],
-      'exterior_features' => ($property['ExteriorFeatures']),
-      'water_source' => $property['WaterSource'],
+      'exterior_features' => $this->splitCamelCase($property['ExteriorFeatures']),
+      'water_source' => $this->splitCamelCase($property['WaterSource']),
       'heat' => $property['HeatingYn'],
       'addres' => $property['UnparsedAddress'],
       'basement' => $property['Basement'],
       'pool_features' => NULL,
       'garage_type' => $property['GarageType'],
       'cooling' => $property['Cooling'],
-      'security_features' => $property['SecurityFeatures'],
+      'security_features' => $this->splitCamelCase($property['SecurityFeatures']),
       'balcony' => NULL,
       'pets' => $property['CondominiumPetPoliciesYNUR'],
       'postal_code' => $property['PostalCode'],
       'fireplace_features' => $property['FireplaceFeatures'],
-      'features' => $property['LotFeatures'],
+      'features' => $this->splitCamelCase($property['LotFeatures']),
       'bath_total' => $property['BathroomsTotalInteger'],
       'living_area_range' => $property['LotSizeRange'],
       'state' => $property['StateOrProvince'],
@@ -2231,7 +2231,7 @@ class Helpers {
 
     $class_id = $this->getClassId($property);
 
-    $city_name = trim(rtrim($property['City']));
+    $city_name = trim(rtrim($this->splitCamelCase($property['City'])));
     $city = trim(rtrim($city_name));
     $slug = filter_var($city, FILTER_SANITIZE_STRING);
     $code = strtolower(preg_replace('/[^a-z0-9-]+/i', '-', $slug));
@@ -2294,7 +2294,7 @@ class Helpers {
       'email' => $coagentemail,
     ];
 
-    $county = trim(rtrim($property['CountyOrParish']));
+    $county = trim(rtrim($this->splitCamelCase($property['CountyOrParish'])));
     $county = trim(rtrim($county));
     $slug = filter_var($county, FILTER_SANITIZE_STRING);
     $code = strtolower(preg_replace('/[^a-z0-9-]+/i', '-', $slug));
@@ -2308,7 +2308,7 @@ class Helpers {
     $address_large = '';
     if (isset($property['PostalCode']) && isset($property['City'])) {
       $address_large = (trim(preg_replace('!\s+!', ' ', implode(', ', [
-        trim($property['City']),
+        trim($city_name),
         implode(' ', [
           $property['StateOrProvince'] ?? 'OR',
           trim($property['PostalCode']),
@@ -2386,7 +2386,7 @@ class Helpers {
     $params['legal_desc'] = (isset($property['TaxLegalDescription'])) ? trim(preg_replace('!\s+!', ' ', $property['TaxLegalDescription'])) : NULL;
     $params['amenities'] = $property['AssociationAmenities'] ?? NULL;
 
-    $params['parking_desc'] = (isset($property['ParkingFeatures'])) ? addslashes($property['ParkingFeatures']) : NULL;
+    $params['parking_desc'] = (isset($property['ParkingFeatures'])) ? addslashes($this->splitCamelCase($property['ParkingFeatures'])) : NULL;
 
     $params['wv'] = $property['ViewDescription'] ?? NULL;
     $params['water_front'] = !empty($property['WaterfrontFeatures']) ? TRUE : FALSE;
@@ -2394,7 +2394,6 @@ class Helpers {
     $params['wa'] = (isset($property['WaterSource'])) ? $property['WaterSource'] : 'Public';
 
     $params['state'] = $property['StateOrProvince'] ?? 'OR';
-    //TODO
     $params['state_name'] = $this->globalVariables->statesName[$property['StateOrProvince']] ?? 'OR';
 
     $params['parking'] = !empty($property['ParkingTotal']) ? $property['ParkingTotal'] : $property['GarageSpaces'];
@@ -2430,14 +2429,14 @@ class Helpers {
     $params['oh'] = $property['OpenHouseYn'] ?? 0;
 
     $params['folio_number'] = (isset($property['ParcelNumber'])) ? $property['ParcelNumber'] : '';
-    $params['style'] = (isset($property['ArchitecturalStyle'])) ? $property['ArchitecturalStyle'] : '';
+    $params['style'] = (isset($property['ArchitecturalStyle'])) ? $this->splitCamelCase($property['ArchitecturalStyle']) : '';
     $params['date_create'] = date('Y-m-d H:i:s');
     $params['date_proccess'] = date('Y-m-d H:i:s');
     $params['last_updated'] = date('Y-m-d H:i:s', strtotime($property['ModificationTimestamp']));
 
     $params['mls_status'] = ('Active' === $property['StandardStatus']) ? 1 : 6;
 
-    $params['status_name'] = $property['StandardStatus'];
+    $params['status_name'] = $this->splitCamelCase($property['StandardStatus']);
     $params['slug'] = strtolower(preg_replace('!-+!', '-', preg_replace('/[^a-zA-Z0-9\-]/', '', str_replace(' ', '-', implode('-', [
       $params['address_short'],
       $params['address_large'],
@@ -2452,7 +2451,7 @@ class Helpers {
 
     $params['tax_year'] = (isset($property['TaxYear'])) ? (int) $property['TaxYear'] : NULL;
     $params['tax_amount'] = (isset($property['TaxAnnualAmount'])) ? (int) $property['TaxAnnualAmount'] : NULL;
-    $params['feature_exterior'] = (isset($property['ExteriorFeatures'])) ? $property['ExteriorFeatures'] : '';
+    $params['feature_exterior'] = (isset($property['ExteriorFeatures'])) ? $this->splitCamelCase($property['ExteriorFeatures']) : '';
     $params['virtual_tour'] = (isset($property['VirtualTourURLUnbranded'])) ? $property['VirtualTourURLUnbranded'] : NULL;
     $params['is_commercial'] = $property['PropertyType'] == 'CommercialSale' ? TRUE : FALSE;
     $params['more_info'] = $more_info;
@@ -2465,7 +2464,7 @@ class Helpers {
     $params['assoc_fee'] = (isset($property['AssociationFee'])) ? (int) $property['AssociationFee'] : 0;
     $params['price_sqft'] = $price_sqft;
 
-    $params['pt_view'] = $property['ViewDescription'] ?? NULL;
+    $params['pt_view'] = $this->splitCamelCase($property['ViewDescription']) ?? NULL;
 
     $params['imagens'] = [];
     $params['development'] = $property['Development'] ?? NULL; //revisar OJO
@@ -2531,6 +2530,17 @@ class Helpers {
 
     $this->uploadImageReduced($destinoRoute, $imageConverted, $prefix);
     unlink($destinoRoute);
+  }
+
+  public
+  function splitCamelCase($str
+  ) {
+    $str = str_replace(' ', '', $str);
+    $splitCamelArray = preg_split('/(?=[A-Z])/', $str);
+
+    $return = trim(ucwords(implode(' ', $splitCamelArray)));
+
+    return str_replace(' ,', ',', $return);
   }
 
   public

@@ -55,8 +55,6 @@ try {
   $comand = "php EnquevePhotos.php  --status=$status2 > enquevePhotosBoard36.log 2>&1";
   shell_exec($comand);
 
-  $comand = "php ../Cronjobs/geocode.php --status=$status2 --top=3000 > geocode36.log 2>&1";
-  shell_exec($comand);
 }
 catch (\Throwable $th) {
   makeReport($th, __FILE__);
