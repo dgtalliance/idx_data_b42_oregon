@@ -287,14 +287,13 @@ class Helpers {
     return FALSE;
   }
 
-  function getAllActivePendingPropertiestodelete($lastUpdate) {
-    $token = $this->globalVariables->VOW_TOCKEN;
+  function getAllActivePendingPropertiestodelete($skip) {
+    $token = $this->globalVariables->TOCKEN;
     $select = 'ListingKey,ModificationTimestamp';
 
-    $filter = "MlsStatus in ('Extension','Sold Conditional','Sold Conditional Escape','Draft','Leased Conditional Escape','Price Change','New') and ModificationTimestamp ge $lastUpdate";
+    $filter = "(StandardStatus+eq+Odata.Models.StandardStatus%27Active%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27Pending%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27ActiveUnderContract%27)";
 
-    $url = 'https://query.ampre.ca/odata/Property?$filter=' . $filter . '&$top=1000&$orderby=ModificationTimestamp&$select=' . $select;
-
+    $url = 'https://resoapi.rmlsweb.com/reso/odata/Property?$select=' . $select . '&$skip=' . $skip . '&$filter=' . $filter . '&$top=200';
     $response = $this->clientGuzzle->request('GET', $url, [
       'headers' => [
         'Authorization' => $token,
@@ -633,7 +632,7 @@ class Helpers {
   ) {
     $lastUpdateQuery = '';
     if (!is_null($lastUpdate)) {
-      $lastUpdateQuery = "WHERE(ModificationTimestamp > '$lastUpdate') and GeocodeStatus=1  order by id limit $id,1000";
+      $lastUpdateQuery = "WHERE(ModificationTimestamp > '$lastUpdate')   order by id limit $id,1000";
     }
     else {
       if ($id >= 0) {
@@ -910,17 +909,86 @@ class Helpers {
     }
     while (count($propertiesFromWorka) == 1000);
 
-    //    if ($this->status == 'active') {
-    //      $this->cleanIndex();
-    //    }
+    if ($this->status == 'active') {
+      $this->cleanIndex();
+    }
   }
 
-  public
-  function cleanIndex() {
-    $data = $this->getAllIdsToDelete();
+  public function cleanIndex() {
+    $sql = "SELECT ListingKey FROM Active_Property";
+    $dataWorka = $this->connection->WorkaConnection()->query($sql)->fetchAll(\PDO::FETCH_COLUMN);
 
-    $this->deleteProperties($data);
+    $sqlIdsMap = array_flip($dataWorka);
+
+    $params = [
+      'index' => $this->index . '_*',
+      'scroll' => '1m',
+      'size'  => 1000,
+      'body'  => [
+        '_source' => ["mls_num", "is_rental"]
+      ]
+    ];
+
+    $response = $this->client->search($params);
+    $scrollId = $response['_scroll_id'];
+    $hits = $response['hits']['hits'];
+
+    $bulkParams = ['body' => []];
+    $deleteCount = 0;
+
+    while (count($hits) > 0) {
+      foreach ($hits as $hit) {
+        $mlsNum = $hit['_source']['mls_num'];
+
+        if (!isset($sqlIdsMap[$mlsNum])) {
+
+          $targetIndex = ($hit['_source']['is_rental'] == 1)
+            ? $this->index . '_rental'
+            : $this->index . '_sale';
+
+          $bulkParams['body'][] = [
+            'delete' => [
+              '_index' => $targetIndex,
+              '_id'    => $mlsNum
+            ]
+          ];
+          $deleteCount++;
+        }
+      }
+
+      if (count($bulkParams['body']) >= 1000) {
+        $this->client->bulk($bulkParams);
+        $bulkParams = ['body' => []];
+        IdxLogger::setLog("Ejecutando lote de borrado...", IdxLog::type_confirmation);
+      }
+
+      try {
+        $response = $this->client->scroll([
+          'scroll_id' => $scrollId,
+          'scroll'    => '1m'
+        ]);
+        $scrollId = $response['_scroll_id']; // Actualizar ID por si cambia
+        $hits = $response['hits']['hits'];
+      } catch (\Exception $e) {
+        var_dump($e->getMessage());
+        break;
+      }
+    }
+
+    if (!empty($bulkParams['body'])) {
+      $this->client->bulk($bulkParams);
+    }
+
+
+    IdxLogger::setLog("Limpieza finalizada. Total eliminados: $deleteCount", IdxLog::type_confirmation);
   }
+
+//  public
+//  function cleanIndex() {
+//    $data = $this->getAllIdsToDelete();
+//
+//    $this->deleteProperties($data);
+//  }
 
   public
   function getAllIdsToDelete() {

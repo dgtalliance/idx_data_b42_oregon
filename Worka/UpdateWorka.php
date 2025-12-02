@@ -30,31 +30,30 @@ try {
 
     $helpers->processDataToInsertInWorka($data, $status);
     IdxLogger::setLog("Properties processed: " . count($data) . " - LastUpdate: $lastUpdate", IdxLog::type_confirmation);
-    $skip+=100;
+    $skip += 100;
   }
   while (count($data['value']) == 100);
 
-//  if ($status == 'Active') {
-//    $lastUpdate = '1970-01-01T00:00:00Z';
-//    $allProperties = [];
-//    do {
-//      $data = $helpers->getAllActivePendingPropertiestoDelete($lastUpdate);
-//      $lastUpdate = isset($data['value'][999]['ModificationTimestamp']) ? $data['value'][999]['ModificationTimestamp'] : NULL;
-//
-//      foreach ($data['value'] as $key => $value) {
-//        $allProperties[] = $value['ListingKey'];
-//      }
-//      IdxLogger::setLog("Properties processed: " . count($data) . " - LastUpdate: $lastUpdate", IdxLog::type_confirmation);
-//    }
-//    while (count($data['value']) == 1000);
-//
-//    if (count($allProperties) > 50000) {
-//      $helpers->deleteNonComingProperties($allProperties);
-//    }
-//  }
+  if ($status == 'Active') {
+    $skip = 0;
+    $allProperties = [];
+    do {
+      $data = $helpers->getAllActivePendingPropertiestodelete($skip);
+
+      foreach ($data['value'] as $key => $value) {
+        $allProperties[] = $value['ListingKey'];
+      }
+      $skip += 200;
+      IdxLogger::setLog("Properties processed: " . count($data) . " - LastUpdate: $lastUpdate", IdxLog::type_confirmation);
+    }
+    while (count($data['value']) == 200);
+
+    if (count($allProperties) > 1000) {
+      $helpers->deleteNonComingProperties($allProperties);
+    }
+  }
   $comand = "php EnquevePhotos.php  --status=$status2 > enquevePhotosBoard36.log 2>&1";
   shell_exec($comand);
-
 }
 catch (\Throwable $th) {
   makeReport($th, __FILE__);
