@@ -2420,8 +2420,8 @@ class Helpers {
     $params['price'] = (int) $price;   //revisar en detalle si el close price es el current de los rental
     $params['is_rental'] = 0;
     $params['year_built'] = (!empty($property['YearBuilt'])) ? (int) $property['YearBuilt'] : NULL;
-    $params['type_name'] = $property['PropertySubType'];
-    $params['type'] = $property['PropertyType'];
+    $params['type_name'] = $this->splitCamelCase($property['PropertySubType']);
+    $params['type'] = $this->splitCamelCase($property['PropertyType']);
     $params['bed'] = (isset($property['BedroomsTotal'])) ? (($property['BedroomsTotal'] == NULL) ? 0 : (int) $property['BedroomsTotal']) : 0;
     $params['baths_half'] = $property['BathroomsHalf'] ?? 0;
 
