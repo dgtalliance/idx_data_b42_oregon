@@ -674,6 +674,11 @@ class Helpers {
   public
   function set_more_info($property
   ) {
+    $rangePrice = NULL;
+    if (!empty($property['ListPriceLow']) && !empty($property['ListPriceHigh'])) {
+      $rangePrice = "{$property['ListPriceLow']}-{$property['ListPriceHigh']}";
+    }
+
     return [
       'type_property' => $this->splitCamelCase($property['PropertySubType']),
       'status_name' => $this->splitCamelCase($property['StandardStatus']),
@@ -706,6 +711,8 @@ class Helpers {
       'bath_total' => $property['BathroomsTotalInteger'],
       'living_area_range' => $property['LotSizeRange'],
       'state' => $property['StateOrProvince'],
+      'range_price' => $rangePrice,
+      'price_type' => $rangePrice,
     ];
   }
 
@@ -916,17 +923,19 @@ class Helpers {
 
   public function cleanIndex() {
     $sql = "SELECT ListingKey FROM Active_Property";
-    $dataWorka = $this->connection->WorkaConnection()->query($sql)->fetchAll(\PDO::FETCH_COLUMN);
+    $dataWorka = $this->connection->WorkaConnection()
+      ->query($sql)
+      ->fetchAll(\PDO::FETCH_COLUMN);
 
     $sqlIdsMap = array_flip($dataWorka);
 
     $params = [
       'index' => $this->index . '_*',
       'scroll' => '1m',
-      'size'  => 1000,
-      'body'  => [
-        '_source' => ["mls_num", "is_rental"]
-      ]
+      'size' => 1000,
+      'body' => [
+        '_source' => ["mls_num", "is_rental"],
+      ],
     ];
 
     $response = $this->client->search($params);
@@ -941,7 +950,6 @@ class Helpers {
         $mlsNum = $hit['_source']['mls_num'];
 
         if (!isset($sqlIdsMap[$mlsNum])) {
-
           $targetIndex = ($hit['_source']['is_rental'] == 1)
             ? $this->index . '_rental'
             : $this->index . '_sale';
@@ -949,8 +957,8 @@ class Helpers {
           $bulkParams['body'][] = [
             'delete' => [
               '_index' => $targetIndex,
-              '_id'    => $mlsNum
-            ]
+              '_id' => $mlsNum,
+            ],
           ];
           $deleteCount++;
         }
@@ -965,11 +973,12 @@ class Helpers {
       try {
         $response = $this->client->scroll([
           'scroll_id' => $scrollId,
-          'scroll'    => '1m'
+          'scroll' => '1m',
         ]);
         $scrollId = $response['_scroll_id']; // Actualizar ID por si cambia
         $hits = $response['hits']['hits'];
-      } catch (\Exception $e) {
+      }
+      catch (\Exception $e) {
         var_dump($e->getMessage());
         break;
       }
@@ -979,16 +988,15 @@ class Helpers {
       $this->client->bulk($bulkParams);
     }
 
-
     IdxLogger::setLog("Limpieza finalizada. Total eliminados: $deleteCount", IdxLog::type_confirmation);
   }
 
-//  public
-//  function cleanIndex() {
-//    $data = $this->getAllIdsToDelete();
-//
-//    $this->deleteProperties($data);
-//  }
+  //  public
+  //  function cleanIndex() {
+  //    $data = $this->getAllIdsToDelete();
+  //
+  //    $this->deleteProperties($data);
+  //  }
 
   public
   function getAllIdsToDelete() {
@@ -2560,7 +2568,10 @@ class Helpers {
 
     $params['image_url'] = 'https://' . $this->globalVariables->bucket_name . '.idxboost.us/' . $prefix . '/' . $params['mls_num'] . '_1.jpeg';
     $params['thumbnail_url'] = 'https://' . $this->globalVariables->bucket_name_reduced . '.idxboost.us/' . $prefix . '/' . $params['mls_num'] . '_x600.jpeg';;
-
+    if ($property['InternetAddressDisplayYn'] == 0) {
+      $params['st_name'] = "Undisclosed Address";
+      $params['address_short'] = "Undisclosed Address";
+    }
     if ($this->table == "idx_property_active_pending") {
       $params['check_price_change_timestamp'] = isset($property['PriceChangeTimestamp']) ? date('Y-m-d H:i:s', strtotime($property['PriceChangeTimestamp'])) : date('Y-m-d H:i:s', strtotime($property['OnMarketDate']));
 

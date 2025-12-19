@@ -52,7 +52,7 @@ try {
       $helpers->deleteNonComingProperties($allProperties);
     }
   }
-  $comand = "php EnquevePhotos.php  --status=$status2 > enquevePhotosBoard36.log 2>&1";
+  $comand = "php EnquevePhotos.php  --status=$status2 > enquevePhotosBoard42.log 2>&1";
   shell_exec($comand);
 }
 catch (\Throwable $th) {
