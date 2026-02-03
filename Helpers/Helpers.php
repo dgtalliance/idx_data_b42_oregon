@@ -1639,7 +1639,7 @@ class Helpers
                                 ],
                             ],
                         ],
-                        'lot_size' => ['type' => 'integer'],
+                        'lot_size' => ['type' => 'long'],
                         'mf' => ['type' => 'boolean'],
                         'mls_num' => ['type' => 'keyword'],
                         'mls_status' => ['type' => 'long'],
