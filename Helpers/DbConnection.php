@@ -24,6 +24,7 @@ class DbConnection
 
             return $pdoConnection;
         } catch (\Throwable $th) {
+          dd("asdasdsad");
             print("The connection to the database has failed " . $th->getMessage());
         }
     }

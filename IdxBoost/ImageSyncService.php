@@ -65,7 +65,7 @@ class ImageSyncService
                 'sysid' => $sysId,
                 'message' => $throwable->getMessage(),
                 'process' => 1,
-                'boardId' => 42
+                'boardId' => 36
             ]);
             $this->helpers->updateMediaStatus("'" . $mls . "'", $status, 3);
 
