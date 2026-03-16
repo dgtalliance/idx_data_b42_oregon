@@ -2562,7 +2562,7 @@ class Helpers
         $params['virtual_tour'] = (isset($property['VirtualTourURLUnbranded'])) ? $property['VirtualTourURLUnbranded'] : NULL;
         $params['is_commercial'] = $property['PropertyType'] == 'CommercialSale' ? TRUE : FALSE;
         $params['more_info'] = $more_info;
-        $params['more_info']['addres']=$params['full_address'];
+        $params['more_info']['addres'] = $params['full_address'];
         $previusListPrice = $property['PreviousListPrice'] ?? $price_origin;
         $params['reduced_price'] = ($previusListPrice > 0) ? ($price * 100) / $previusListPrice : 0;
         $params['reduced_price'] = ($params['reduced_price'] > 0) ? $params['reduced_price'] - 100 : 0;
@@ -3343,9 +3343,7 @@ class Helpers
         return $con->query($sql)->fetchAll();
     }
 
-    public
-    function updateMediaStatus($mls_list, $status, $mediaValue
-    )
+    public function updateMediaStatus($mls_list, $status, $mediaValue)
     {
         $con = $this->connection->WorkaConnection();
 
@@ -3365,10 +3363,10 @@ class Helpers
     }
 
     public
-    function registerFailure(array $failureData
-    ): void
+    function registerFailure(array $failureData): void
     {
-        $connection = $this->connection->ActiveConnection();
+        $manager = new DbConnection();
+        $connection = $manager->ClosedConnection();
         [
             'mls_num' => $mlsNum,
             'sysid' => $sysid,

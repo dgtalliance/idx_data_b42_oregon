@@ -60,15 +60,14 @@ class ImageSyncService
                 $this->helpers->updateMediaStatus("'" . $mls . "'", $status, 1);
             }
         } catch (Throwable $throwable) {
+            $this->helpers->updateMediaStatus("'" . $mls . "'", $status, 3);
             $this->helpers->registerFailure([
                 'mls_num' => $mls,
                 'sysid' => $sysId,
                 'message' => $throwable->getMessage(),
                 'process' => 1,
-                'boardId' => 36
+                'boardId' => GlobalVariables::BOARD_ID
             ]);
-            $this->helpers->updateMediaStatus("'" . $mls . "'", $status, 3);
-
         }
     }
 
