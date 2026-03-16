@@ -14,19 +14,14 @@ class DbConnection
 
     public function WorkaConnection()
     {
-        try {
             $host = $this->variables->workaHost;
-            $dbName = $this->variables->activeDb;
+            $dbName = $this->variables->workaDB;
             $dbPort = $this->variables->workaPort;
             $dbCharset = $this->variables->dbCharset;
             $dsn = "mysql:host=$host;dbname=$dbName;port=$dbPort;charset=$dbCharset";
             $pdoConnection = new PDO($dsn, $this->variables->workaUser, $this->variables->workaPassword, $this->variables->options);
 
             return $pdoConnection;
-        } catch (\Throwable $th) {
-          dd("asdasdsad");
-            print("The connection to the database has failed " . $th->getMessage());
-        }
     }
 
     public function ActiveConnection()
