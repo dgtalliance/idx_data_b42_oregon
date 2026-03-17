@@ -2322,11 +2322,14 @@ class Helpers
         }
     }
 
-    public
-    function PrepareProperties($property
-    )
+    public function PrepareProperties($property)
     {
         $params = [];
+
+        $date = new DateTime($property['OnMarketDate']);
+        $utc7 = new DateTimeZone('+07:00');
+        $date->setTimezone($utc7);
+        $property['OnMarketDate'] = $date->format('Y-m-d H:i:s');
 
         //variables convertidas
         $more_info = $this->set_more_info($property);
