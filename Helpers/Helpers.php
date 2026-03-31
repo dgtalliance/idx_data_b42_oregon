@@ -2540,9 +2540,9 @@ class Helpers
 
         $params['folio_number'] = (isset($property['ParcelNumber'])) ? $property['ParcelNumber'] : '';
         $params['style'] = (isset($property['ArchitecturalStyle'])) ? $this->splitCamelCase($property['ArchitecturalStyle']) : '';
-        $params['date_create'] = date('Y-m-d H:i:s');
+        $params['date_create'] = $property['created_on'];
         $params['date_proccess'] = date('Y-m-d H:i:s');
-        $params['last_updated'] = date('Y-m-d H:i:s', strtotime($property['ModificationTimestamp']));
+        $params['last_updated'] = $property['updated_on'];
 
         $params['mls_status'] = ('Active' === $property['StandardStatus']) ? 1 : 6;
 
