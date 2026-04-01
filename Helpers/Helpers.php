@@ -2436,9 +2436,11 @@ class Helpers
         $lotSize = !empty($property['LotSizeAcres']) ? $property['LotSizeAcres'] * 43560 : 0;
         $params['sysid'] = $property['ListingKey'];
         $params['mls_num'] = $property['ListingId'];
-        $params['date_property'] = date('Y-m-d H:i:s', strtotime($property['OnMarketDate']));
+        $dateProperty = (date('Y-m-d') == date('Y-m-d', strtotime($property['OnMarketDate']))) ?
+            $property['created_on'] : $property['OnMarketDate'];
+        $params['date_property'] = date('Y-m-d H:i:s', strtotime($dateProperty));
 
-        $params['list_date'] = (!empty($property['OnMarketDate'])) ? strtotime($property['OnMarketDate']) : strtotime($property['ModificationTimestamp']);
+        $params['list_date'] = strtotime($params['date_property']);
 
         $params['class_id'] = $class_id;
         $params['city'] = $city;
