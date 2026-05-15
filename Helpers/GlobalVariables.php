@@ -416,9 +416,10 @@ class GlobalVariables {
   public $dbCharset = 'utf8mb4';
 
   //    public $activeDb = 'idx_newjersey';
-  public $activeDb = 'idxboost_b42_db';
+  public $activeDb = 'idxboost_datamonitor_setting_db';
+  public $workaDB = 'idxboost_b42_db';
 
-  public $historyDb = 'idxboost_b42_history';
+  public $historyDb = 'idxboost_datamonitor_setting_db';
 
   public $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

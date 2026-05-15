@@ -8,6 +8,10 @@ $sysId = $params['sysId'] ?? null;
 $sourceId = $params['sourceId'] ?? null;
 $status = $params['status'] ?? null;
 
+if (!file_exists('../uploads')) {
+    mkdir('../uploads', 0777, true);
+}
+
 $helper = new Helpers();
 $dbConnection = new DbConnection();
 $imageService = new ImageSyncService($helper, $dbConnection);

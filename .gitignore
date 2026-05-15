@@ -1,0 +1,8 @@
+.scannerwork/
+.idea
+vendor/
+files/
+uploads/
+settings.json
+logs.txt
+composer.lock
