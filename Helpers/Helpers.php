@@ -2402,9 +2402,16 @@ class Helpers {
     $lotSize = !empty($property['LotSizeAcres']) ? $property['LotSizeAcres'] * 43560 : 0;
     $params['sysid'] = $property['ListingKey'];
     $params['mls_num'] = $property['ListingId'];
-    $params['date_property'] = date('Y-m-d H:i:s', strtotime($property['OnMarketDate']));
 
-    $params['list_date'] = (!empty($property['OnMarketDate'])) ? strtotime($property['OnMarketDate']) : strtotime($property['ModificationTimestamp']);
+    $dateNew = date('Y-m-d', strtotime($property['OnMarketDate']));
+    $dateMod = date('Y-m-d', strtotime($property['ModificationTimestamp']));
+    if ($dateMod == $dateNew) {
+      $params['date_property'] = date('Y-m-d H:i:s', strtotime($property['ModificationTimestamp']));
+      $params['list_date'] = strtotime($property['ModificationTimestamp']);
+    }else {
+      $params['date_property'] = date('Y-m-d H:i:s', strtotime($property['OnMarketDate']));
+      $params['list_date'] = (!empty($property['OnMarketDate'])) ? strtotime($property['OnMarketDate']) : strtotime($property['ModificationTimestamp']);
+    }
 
     $params['class_id'] = $class_id;
     $params['city'] = $city;
