@@ -23,21 +23,23 @@ $message = new AMQPMessage('', [
 
 $result = $helpers->getPropertiesForUpdatePhotos($board, $status);
 
-$properties = array_chunk($result, 10);
+$properties = array_chunk($result, 5);
 foreach ($properties as $property) {
     $messagesQueve = [];
+
     foreach ($property as $value) {
         $value['Status'] = $status;
         $value['SourceId'] = $board;
         $messagesQueve[] = $value;
-
     }
+
     $message->setBody(json_encode($messagesQueve));
     $RabbitCon->channel->basic_publish(
         $message,
         '',
         $RabbitCon->queue_name_photos
     );
+
     $mls_list = "'" . implode("','", array_column($property, 'ListingId')) . "'";
     IdxLogger::setLog('Published message with MLSNumbers: ' . implode(",", array_column($property, 'ListingId')), IdxLog::type_confirmation);
     $helpers->updateMediaStatus($mls_list, $status, 2);

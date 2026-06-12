@@ -294,23 +294,34 @@ class Helpers
         return FALSE;
     }
 
-    function getAllActivePendingPropertiestodelete($skip)
+    function getAllActivePendingPropertiestodelete($url = null)
     {
         $token = $this->globalVariables->TOCKEN;
-        $select = 'ListingKey,ModificationTimestamp';
 
-        $filter = "(StandardStatus+eq+Odata.Models.StandardStatus%27Active%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27Pending%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27ActiveUnderContract%27)";
+        if ($url === null) {
+            $select = 'ListingKey,ModificationTimestamp';
+            $filter = "(StandardStatus+eq+Odata.Models.StandardStatus%27Active%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27Pending%27+or+StandardStatus+eq+Odata.Models.StandardStatus%27ActiveUnderContract%27)";
+            $url = 'https://resoapi.rmlsweb.com/reso/odata/Property?$select=' . $select . '&$filter=' . $filter . '&$top=200';
+        }
 
-        $url = 'https://resoapi.rmlsweb.com/reso/odata/Property?$select=' . $select . '&$skip=' . $skip . '&$filter=' . $filter . '&$top=200';
-        $response = $this->clientGuzzle->request('GET', $url, [
-            'headers' => [
-                'Authorization' => $token,
-                'Accept' => 'application/json',
-            ],
-        ]);
-
-        if ($response->getStatusCode() === 200) {
-            return json_decode($response->getBody()->getContents(), TRUE);
+        $attempts = 0;
+        while ($attempts < 3) {
+            try {
+                $response = $this->clientGuzzle->request('GET', $url, [
+                    'headers' => [
+                        'Authorization' => $token,
+                        'Accept' => 'application/json',
+                    ],
+                    'timeout' => 120,
+                ]);
+                if ($response->getStatusCode() === 200) {
+                    return json_decode($response->getBody()->getContents(), TRUE);
+                }
+            } catch (\Throwable $e) {
+                $attempts++;
+                $this->logger->errorLog("getAllActivePendingPropertiestodelete attempt $attempts failed: " . $e->getMessage());
+                if ($attempts < 3) sleep(10 * $attempts);
+            }
         }
 
         return FALSE;
